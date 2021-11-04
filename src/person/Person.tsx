@@ -1,16 +1,17 @@
 import React, { ReactElement } from "react";
 import { useQuery } from 'react-query';
-import { httpClient } from "../http/httpClient";
+import httpClient from "../http/httpClient";
 
-const getPerson = async () => {
-  const { data } = await httpClient.get('https://swapi.dev/api/people/1/')
-  return data
+export const usePersonApi = () => {
+  return useQuery('person-query', () => httpClient.get('https://swapi.dev/api/people/1/'))
 }
 
 export const Person = (): ReactElement => {
-  const query = useQuery('get-person', () => getPerson())
+  const query = usePersonApi()
   
-  return <div>
-    {query.isLoading ? "Loading..." : JSON.stringify(query.data)}
-  </div>
+  return (
+    <div data-testid="person-div">
+      {query.isLoading ? "Loading..." : JSON.stringify(query.data?.data)}
+    </div>
+  )
 }
