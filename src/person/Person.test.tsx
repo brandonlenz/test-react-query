@@ -8,9 +8,13 @@ jest.mock('../queries/usePersonApi', () => ({
   // __esModule: true,
   usePersonApi: jest.fn()
 }))
-const mockUsePersonApi = usePersonApi as jest.Mock
+const mockUsePersonApi = usePersonApi as jest.MockedFunction<typeof usePersonApi>
 
-const personResponse = {
+const personResponse: AxiosResponse = {
+  status: 200,
+  statusText: 'OK',
+  config: {},
+  headers: {},
   data: {
     name:"Luke Skywalker",
     height:"172",
@@ -23,7 +27,7 @@ describe("Person Component", () => {
     mockUsePersonApi.mockReturnValueOnce({
       isLoading: false,
       data: personResponse
-    })
+    } as UseQueryResult<AxiosResponse, AxiosError>)
 
     const { queryByTestId } = render(<Person />)
     
@@ -43,7 +47,7 @@ describe("Person Component", () => {
     it("renders a loader", () => {
       mockUsePersonApi.mockReturnValueOnce({
         isLoading: true
-      })
+      } as UseQueryResult<AxiosResponse, AxiosError>)
   
       const { queryByTestId } = render(<Person />)
       
@@ -63,12 +67,12 @@ describe("Person Component", () => {
     it("shows the error message", () => {
       const error = {
         message: "An error occurred!"
-      }
+      } as AxiosError
 
       mockUsePersonApi.mockReturnValueOnce({
         isError: true,
         error: error
-      })
+      } as UseQueryResult<AxiosResponse, AxiosError>)
   
       const { queryByTestId } = render(<Person />)
       
