@@ -1,38 +1,86 @@
-import { renderHook } from "@testing-library/react-hooks";
-import { AxiosInstance } from "axios";
-import { QueryClient, QueryClientProvider } from "react-query";
-import httpClient from '../http/httpClient'
-import { usePersonApi } from "./Person";
+import { render } from "@testing-library/react";
+import { AxiosError, AxiosResponse } from "axios";
+import { isError, UseQueryResult } from "react-query";
+import { usePersonApi } from "../queries/usePersonApi";
+import { Person } from "./Person";
 
-jest.mock('../http/httpClient')
-const mockedHttpClient = httpClient as jest.Mocked<AxiosInstance>
+jest.mock('../queries/usePersonApi', () => ({
+  // __esModule: true,
+  usePersonApi: jest.fn()
+}))
+const mockUsePersonApi = usePersonApi as jest.Mock
 
-describe("Person", () => {
-  it("Calls the query", async () => {
-    const queryClient = new QueryClient();
-    const wrapper = ({ children }: any) => (
-      <QueryClientProvider client={queryClient}>
-        {children}
-      </QueryClientProvider>
-    );
-    const person = {
-      data: {
-        name:"Luke Skywalker",
-        height:"172",
-      }
-    }
+const personResponse = {
+  data: {
+    name:"Luke Skywalker",
+    height:"172",
+  }
+}
 
-    mockedHttpClient.get.mockResolvedValueOnce(person)
-
-    const { result, waitFor } =  renderHook(() => usePersonApi(), { wrapper })
-
-    await waitFor(() => {
-      return result.current.isSuccess
+describe("Person Component", () => {
+  
+  it("Loads the person data" , () => {
+    mockUsePersonApi.mockReturnValueOnce({
+      isLoading: false,
+      data: personResponse
     })
-    
 
-    expect(mockedHttpClient.get).toHaveBeenCalledTimes(1)
-    expect(result.current.data).toEqual(person)
+    const { queryByTestId } = render(<Person />)
+    
+    const personDiv = queryByTestId('person-div')
+    const loadingDiv = queryByTestId('loader-div')
+    const errorDiv = queryByTestId('error-div')
+    const stringifiedPerson = JSON.stringify(personResponse.data)
+
+    expect(mockUsePersonApi).toHaveBeenCalledTimes(1)
+    expect(personDiv).toBeInTheDocument()
+    expect(personDiv).toHaveTextContent(stringifiedPerson)
+    expect(loadingDiv).not.toBeInTheDocument()
+    expect(errorDiv).not.toBeInTheDocument()
+  })
+
+  describe("while loading", () => {
+    it("renders a loader", () => {
+      mockUsePersonApi.mockReturnValueOnce({
+        isLoading: true
+      })
+  
+      const { queryByTestId } = render(<Person />)
+      
+      const personDiv = queryByTestId('person-div')
+      const loadingDiv = queryByTestId('loader-div')
+      const errorDiv = queryByTestId('error-div')  
+  
+      expect(mockUsePersonApi).toHaveBeenCalledTimes(1)
+      expect(personDiv).not.toBeInTheDocument()
+      expect(loadingDiv).toBeInTheDocument()
+      expect(loadingDiv).toHaveTextContent("Loading...")
+      expect(errorDiv).not.toBeInTheDocument()
+    })
+  })
+
+  describe("given a query error", () => {
+    it("shows the error message", () => {
+      const error = {
+        message: "An error occurred!"
+      }
+
+      mockUsePersonApi.mockReturnValueOnce({
+        isError: true,
+        error: error
+      })
+  
+      const { queryByTestId } = render(<Person />)
+      
+      const personDiv = queryByTestId('person-div')
+      const loadingDiv = queryByTestId('loader-div')
+      const errorDiv = queryByTestId('error-div')      
+  
+      expect(mockUsePersonApi).toHaveBeenCalledTimes(1)
+      expect(personDiv).not.toBeInTheDocument()
+      expect(loadingDiv).not.toBeInTheDocument()
+      expect(errorDiv).toBeInTheDocument()
+      expect(errorDiv).toHaveTextContent(error.message)
+    })
   })
 })
-

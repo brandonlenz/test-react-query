@@ -6,7 +6,7 @@ describe('App component', () => {
   it("Renders children", () => {
     const { queryByTestId } = render(<App />);
   
-    const personDiv = queryByTestId('person-div')
+    const personDiv = queryByTestId('person-container')
   
     expect(personDiv).toBeInTheDocument();
   })
