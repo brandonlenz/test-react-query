@@ -8,8 +8,6 @@ export const Person = (): ReactElement => {
 
   const newUser = { name: 'Brandon', job: 'Software Engineer' }
 
-  console.log(mutation)
-
   return (
     <div data-testid="person-container">
       <div data-testid="fetched-person">
